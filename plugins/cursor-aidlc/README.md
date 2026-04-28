@@ -14,29 +14,34 @@ system.
 
 ## Installing
 
-### For End Users: Remote Rules via GitHub (Recommended)
+### Option 1: Copy Rules into Your Project (Recommended)
 
-Cursor can import rules directly from a GitHub repository in one step:
+Copy the generated `.mdc` files directly into your project's `.cursor/rules/`
+directory:
+
+```bash
+# From a clone of this repo, at the repo root:
+mkdir -p /path/to/your/project/.cursor/rules
+cp -R plugins/cursor-aidlc/rules/* /path/to/your/project/.cursor/rules/
+```
+
+Open the project in Cursor — it picks up the `.mdc` rules automatically.
+The `aidlc-orchestrator.mdc` rule is set to `alwaysApply: true`, so it
+loads on every interaction.
+
+### Option 2: Remote Rules via GitHub
+
+Cursor can import `.mdc` files from a GitHub repository:
 
 1. Open **Cursor Settings → Rules, Commands**
 2. Under **Project Rules**, click **+ Add Rule → Remote Rule (GitHub)**
 3. Paste: `https://github.com/awslabs/aidlc-workflows`
-4. Cursor syncs the `.mdc` files into
-   `.cursor/rules/imported/aidlc-workflows/`
 
-Cursor scans the whole repo for `.mdc` files and preserves directory
-structure. No zip downloads, no manual file copying.
-
-### For Development: Local Copy
-
-Copy the generated rule tree into a project's `.cursor/rules/`:
-
-```bash
-# From a clone of this repo, at the repo root:
-cp -R plugins/cursor-aidlc/.cursor/rules/aidlc /path/to/target/project/.cursor/rules/
-```
-
-Then open the project in Cursor — it will pick up the rules automatically.
+Cursor scans the whole repo for `.mdc` files and preserves their relative
+paths. Because this is a monorepo (not a Cursor-only repo), the imported
+rules will be deeply nested under
+`.cursor/rules/imported/aidlc-workflows/plugins/cursor-aidlc/rules/…`.
+This works but is less clean than Option 1.
 
 ## Using the Rules
 
@@ -67,18 +72,16 @@ always loaded, and phase-specific rules are pulled in only when relevant.
 
 ```text
 plugins/cursor-aidlc/
-└── .cursor/
-    └── rules/
-        └── aidlc/
-            ├── aidlc-orchestrator.mdc    # alwaysApply: true
-            ├── core-workflow.mdc          # Adapted master workflow
-            ├── common/                    # Cross-cutting rules
-            ├── inception/                 # Inception phase rules
-            ├── construction/              # Construction phase rules
-            ├── operations/                # Operations phase rules
-            └── extensions/                # Opt-in extensions
-                ├── security/baseline/
-                └── testing/property-based/
+└── rules/
+    ├── aidlc-orchestrator.mdc    # alwaysApply: true
+    ├── core-workflow.mdc          # Adapted master workflow
+    ├── common/                    # Cross-cutting rules
+    ├── inception/                 # Inception phase rules
+    ├── construction/              # Construction phase rules
+    ├── operations/                # Operations phase rules
+    └── extensions/                # Opt-in extensions
+        ├── security/baseline/
+        └── testing/property-based/
 ```
 
 ## Contributing

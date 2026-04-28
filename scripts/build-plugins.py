@@ -867,7 +867,7 @@ CURSOR_PATH_RESOLUTION_NEW = """\
 ## MANDATORY: Rule Details Loading
 **CRITICAL**: When performing any phase, you MUST read and use relevant content from rule detail files. Rule details are bundled with this Cursor rule set — read them from the sibling rule files in this directory tree.
 
-All rule files live under `.cursor/rules/aidlc/` (or the imported equivalent, e.g., `.cursor/rules/imported/aidlc-workflows/plugins/cursor-aidlc/.cursor/rules/aidlc/`). Rule-detail files are organized as:
+Rule-detail files are organized in sibling directories:
 - `common/*.mdc` — cross-cutting rules
 - `inception/*.mdc` — Inception phase rules
 - `construction/*.mdc` — Construction phase rules
@@ -1032,29 +1032,34 @@ system.
 
 ## Installing
 
-### For End Users: Remote Rules via GitHub (Recommended)
+### Option 1: Copy Rules into Your Project (Recommended)
 
-Cursor can import rules directly from a GitHub repository in one step:
+Copy the generated `.mdc` files directly into your project's `.cursor/rules/`
+directory:
+
+```bash
+# From a clone of this repo, at the repo root:
+mkdir -p /path/to/your/project/.cursor/rules
+cp -R plugins/cursor-aidlc/rules/* /path/to/your/project/.cursor/rules/
+```
+
+Open the project in Cursor — it picks up the `.mdc` rules automatically.
+The `aidlc-orchestrator.mdc` rule is set to `alwaysApply: true`, so it
+loads on every interaction.
+
+### Option 2: Remote Rules via GitHub
+
+Cursor can import `.mdc` files from a GitHub repository:
 
 1. Open **Cursor Settings → Rules, Commands**
 2. Under **Project Rules**, click **+ Add Rule → Remote Rule (GitHub)**
 3. Paste: `https://github.com/awslabs/aidlc-workflows`
-4. Cursor syncs the `.mdc` files into
-   `.cursor/rules/imported/aidlc-workflows/`
 
-Cursor scans the whole repo for `.mdc` files and preserves directory
-structure. No zip downloads, no manual file copying.
-
-### For Development: Local Copy
-
-Copy the generated rule tree into a project's `.cursor/rules/`:
-
-```bash
-# From a clone of this repo, at the repo root:
-cp -R plugins/cursor-aidlc/.cursor/rules/aidlc /path/to/target/project/.cursor/rules/
-```
-
-Then open the project in Cursor — it will pick up the rules automatically.
+Cursor scans the whole repo for `.mdc` files and preserves their relative
+paths. Because this is a monorepo (not a Cursor-only repo), the imported
+rules will be deeply nested under
+`.cursor/rules/imported/aidlc-workflows/plugins/cursor-aidlc/rules/…`.
+This works but is less clean than Option 1.
 
 ## Using the Rules
 
@@ -1085,18 +1090,16 @@ always loaded, and phase-specific rules are pulled in only when relevant.
 
 ```text
 plugins/cursor-aidlc/
-└── .cursor/
-    └── rules/
-        └── aidlc/
-            ├── aidlc-orchestrator.mdc    # alwaysApply: true
-            ├── core-workflow.mdc          # Adapted master workflow
-            ├── common/                    # Cross-cutting rules
-            ├── inception/                 # Inception phase rules
-            ├── construction/              # Construction phase rules
-            ├── operations/                # Operations phase rules
-            └── extensions/                # Opt-in extensions
-                ├── security/baseline/
-                └── testing/property-based/
+└── rules/
+    ├── aidlc-orchestrator.mdc    # alwaysApply: true
+    ├── core-workflow.mdc          # Adapted master workflow
+    ├── common/                    # Cross-cutting rules
+    ├── inception/                 # Inception phase rules
+    ├── construction/              # Construction phase rules
+    ├── operations/                # Operations phase rules
+    └── extensions/                # Opt-in extensions
+        ├── security/baseline/
+        └── testing/property-based/
 ```
 
 ## Contributing
@@ -1124,18 +1127,16 @@ def build_cursor_plugin(output_dir: Path) -> None:
         plugins/cursor-aidlc/
         ├── README.md
         ├── .markdownlint-cli2.yaml
-        └── .cursor/
-            └── rules/
-                └── aidlc/
-                    ├── aidlc-orchestrator.mdc   (alwaysApply: true)
-                    ├── core-workflow.mdc         (transformed core)
-                    ├── common/*.mdc
-                    ├── inception/*.mdc
-                    ├── construction/*.mdc
-                    ├── operations/*.mdc
-                    └── extensions/
-                        ├── security/baseline/*.mdc
-                        └── testing/property-based/*.mdc
+        └── rules/
+            ├── aidlc-orchestrator.mdc   (alwaysApply: true)
+            ├── core-workflow.mdc         (transformed core)
+            ├── common/*.mdc
+            ├── inception/*.mdc
+            ├── construction/*.mdc
+            ├── operations/*.mdc
+            └── extensions/
+                ├── security/baseline/*.mdc
+                └── testing/property-based/*.mdc
     """
     version = read_version()
     clean_output(output_dir)
@@ -1143,8 +1144,8 @@ def build_cursor_plugin(output_dir: Path) -> None:
     # README
     (output_dir / "README.md").write_text(cursor_plugin_readme(version))
 
-    # Rule tree root
-    rules_root = output_dir / ".cursor" / "rules" / "aidlc"
+    # Rule tree root — flat under rules/ so manual copy is straightforward
+    rules_root = output_dir / "rules"
     rules_root.mkdir(parents=True)
 
     # -- Orchestrator rule (alwaysApply) --

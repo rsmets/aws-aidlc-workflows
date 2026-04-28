@@ -18,7 +18,7 @@ The AI model intelligently assesses what stages are needed based on:
 ## MANDATORY: Rule Details Loading
 **CRITICAL**: When performing any phase, you MUST read and use relevant content from rule detail files. Rule details are bundled with this Cursor rule set — read them from the sibling rule files in this directory tree.
 
-All rule files live under `.cursor/rules/aidlc/` (or the imported equivalent, e.g., `.cursor/rules/imported/aidlc-workflows/plugins/cursor-aidlc/.cursor/rules/aidlc/`). Rule-detail files are organized as:
+Rule-detail files are organized in sibling directories:
 - `common/*.mdc` — cross-cutting rules
 - `inception/*.mdc` — Inception phase rules
 - `construction/*.mdc` — Construction phase rules

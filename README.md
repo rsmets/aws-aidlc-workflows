@@ -162,22 +162,29 @@ To verify the rules are loaded:
 
 AI-DLC uses [Cursor Rules](https://cursor.com/docs/context/rules) to implement its intelligent workflow.
 
-#### Option 1: Remote Rules via GitHub (Recommended)
+#### Option 1: Copy Generated Rules (Recommended)
 
-Cursor can import rules directly from this repository in a single step — no downloads, no manual copying:
+Copy the pre-built `.mdc` rules from this repository into your project:
 
-1. Open **Cursor Settings → Rules, Commands**
-2. Under **Project Rules**, click **+ Add Rule → Remote Rule (GitHub)**
-3. Paste: `https://github.com/awslabs/aidlc-workflows`
-4. Cursor syncs the `.mdc` files into `.cursor/rules/imported/aidlc-workflows/`
+```bash
+# From a clone of this repo, at the repo root:
+mkdir -p /path/to/your/project/.cursor/rules
+cp -R plugins/cursor-aidlc/rules/* /path/to/your/project/.cursor/rules/
+```
 
-The rules live under `plugins/cursor-aidlc/.cursor/rules/aidlc/` in this repo. Cursor scans the whole repository for `.mdc` files and preserves directory structure on import.
+Open the project in Cursor — it picks up the rules automatically. The
+`aidlc-orchestrator.mdc` rule is set to `alwaysApply: true`, so it loads
+on every interaction. Just describe your task and the orchestrator routes
+to the appropriate phase rules.
 
-Once imported, the `aidlc-orchestrator` rule is set to `alwaysApply: true`, so Cursor loads it on every interaction. Just describe your task (e.g., "Help me build a REST API using AI-DLC") and the orchestrator routes to the appropriate phase rules automatically.
+See `plugins/cursor-aidlc/README.md` for details on the generated rule
+structure and alternative install methods (Remote Rules via GitHub).
 
-> **Note:** If you previously set up AI-DLC manually (Option 2 below), remove the manual setup to avoid duplicate context: delete the manual `.cursor/rules/ai-dlc-workflow.mdc` and the `.aidlc-rule-details/` directory from your project.
+> **Note:** If you previously set up AI-DLC manually (Option 2 below),
+> remove the manual `.cursor/rules/ai-dlc-workflow.mdc` and the
+> `.aidlc-rule-details/` directory to avoid duplicate context.
 
-#### Option 2: Project Rules (Manual)
+#### Option 2: Project Rules (Manual, from Zip)
 
 The commands below assume you extracted the zip to your `Downloads` folder. If you used a different location, replace `Downloads` with your actual folder path.
 
