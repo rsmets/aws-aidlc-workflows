@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
-"""Generate the Claude Code AIDLC plugin from canonical aidlc-rules/ source files.
+"""Generate AIDLC plugins for supported AI coding agents from the canonical
+aidlc-rules/ source files.
 
-This script is the single source of truth for the plugin's structure. It:
+This script is the single source of truth for all generated plugin packages.
+By default it builds every supported target:
+  - Claude Code plugin (plugins/claude-code-aidlc/)
+  - Cursor rules bundle  (plugins/cursor-aidlc/)
+
+For each target it:
   1. Reads aidlc-rules/VERSION for version stamping
-  2. Copies rule-detail files into skill references/ directories
+  2. Copies or adapts rule-detail files into the target-specific layout
   3. Transforms core-workflow.md path-resolution for plugin-native loading
-  4. Emits plugin.json, orchestrator agent, slash commands, and SKILL.md files
+  4. Emits target-specific metadata (plugin.json, .mdc frontmatter, etc.)
 
 Usage:
-    python scripts/build-cc-plugin.py [--output-dir plugins/claude-code-aidlc]
+    python scripts/build-plugins.py               # build all targets
+    python scripts/build-plugins.py --target cc   # build only Claude Code
+    python scripts/build-plugins.py --target cursor   # build only Cursor
 
-The output directory is cleaned and recreated on each run to prevent orphans.
+The output directories are cleaned and recreated on each run to prevent orphans.
 """
 
 import argparse
@@ -28,7 +36,8 @@ RULES_ENTRY = RULES_DIR / "aws-aidlc-rules" / "core-workflow.md"
 RULE_DETAILS = RULES_DIR / "aws-aidlc-rule-details"
 VERSION_FILE = RULES_DIR / "VERSION"
 
-DEFAULT_OUTPUT = REPO_ROOT / "plugins" / "claude-code-aidlc"
+CC_DEFAULT_OUTPUT = REPO_ROOT / "plugins" / "claude-code-aidlc"
+CURSOR_DEFAULT_OUTPUT = REPO_ROOT / "plugins" / "cursor-aidlc"
 
 # The exact text block in core-workflow.md that gets replaced.
 # Matched by its section header — we replace from "## MANDATORY: Rule Details Loading"
@@ -760,20 +769,41 @@ def copy_references(skill_name: str, src_subdirs: list[str], output_dir: Path) -
         shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
-def build_plugin(output_dir: Path) -> None:
-    """Generate the complete plugin directory."""
-    # Validate source exists
-    if not RULES_DIR.exists():
-        print(f"ERROR: {RULES_DIR} not found. Run from the repository root.", file=sys.stderr)
-        sys.exit(1)
+def write_plugin_markdownlint_config(output_dir: Path) -> None:
+    """Copy aidlc-rules/ markdownlint overrides into the plugin directory and
+    layer on plugin-specific settings so generated markdown passes lint."""
+    lint_config_src = RULES_DIR / ".markdownlint-cli2.yaml"
+    if not lint_config_src.exists():
+        return
+    config_text = lint_config_src.read_text()
+    plugin_additions = (
+        "\n"
+        "  # --- Plugin-specific overrides ---\n"
+        "  MD041: false  # first-line-heading — plugin files use YAML frontmatter\n"
+    )
+    config_text = config_text.rstrip() + "\n" + plugin_additions
+    (output_dir / ".markdownlint-cli2.yaml").write_text(config_text)
 
-    # Read version
-    version = VERSION_FILE.read_text().strip()
 
-    # Clean and create output directory
+def clean_output(output_dir: Path) -> None:
+    """Clean and recreate the output directory so deleted source files don't leave orphans."""
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True)
+
+
+def read_version() -> str:
+    """Read version string from aidlc-rules/VERSION."""
+    if not RULES_DIR.exists():
+        print(f"ERROR: {RULES_DIR} not found. Run from the repository root.", file=sys.stderr)
+        sys.exit(1)
+    return VERSION_FILE.read_text().strip()
+
+
+def build_cc_plugin(output_dir: Path) -> None:
+    """Generate the Claude Code plugin directory."""
+    version = read_version()
+    clean_output(output_dir)
 
     # -- plugin.json --
     manifest_dir = output_dir / ".claude-plugin"
@@ -822,39 +852,378 @@ def build_plugin(output_dir: Path) -> None:
     core_dest.mkdir(parents=True, exist_ok=True)
     (core_dest / "core-workflow.md").write_text(core_transformed)
 
-    # -- markdownlint config: merge aidlc-rules/ overrides with plugin-specific needs --
-    lint_config_src = RULES_DIR / ".markdownlint-cli2.yaml"
-    if lint_config_src.exists():
-        # Copy the aidlc-rules config (disables rules the source files violate),
-        # then layer on plugin-specific settings
-        config_text = lint_config_src.read_text()
-        # Add frontmatter support so YAML frontmatter in SKILL.md / commands
-        # is not treated as content, and enable front_matter_title to suppress
-        # MD041 for files with frontmatter.
-        plugin_additions = (
-            "\n"
-            "  # --- Plugin-specific overrides ---\n"
-            "  MD041: false  # first-line-heading — plugin files use YAML frontmatter\n"
+    write_plugin_markdownlint_config(output_dir)
+
+    print(f"Claude Code plugin generated at {output_dir} (version {version})")
+
+
+# ---------------------------------------------------------------------------
+# Cursor plugin generation
+# ---------------------------------------------------------------------------
+# Cursor .mdc path-resolution transform: the plugin ships as a .cursor/rules/
+# bundle, so rule-details live alongside the core workflow rather than in
+# separate skill directories. References resolve inside the imported rule tree.
+CURSOR_PATH_RESOLUTION_NEW = """\
+## MANDATORY: Rule Details Loading
+**CRITICAL**: When performing any phase, you MUST read and use relevant content from rule detail files. Rule details are bundled with this Cursor rule set — read them from the sibling rule files in this directory tree.
+
+All rule files live under `.cursor/rules/aidlc/` (or the imported equivalent, e.g., `.cursor/rules/imported/aidlc-workflows/plugins/cursor-aidlc/.cursor/rules/aidlc/`). Rule-detail files are organized as:
+- `common/*.mdc` — cross-cutting rules
+- `inception/*.mdc` — Inception phase rules
+- `construction/*.mdc` — Construction phase rules
+- `operations/*.mdc` — Operations phase rules
+- `extensions/security/baseline/*.mdc` — security extension
+- `extensions/testing/property-based/*.mdc` — property-based testing extension
+
+All subsequent rule detail file references (e.g., `common/process-overview.md`, `inception/workspace-detection.md`) refer to `.mdc` files with the same relative path in this rule tree (e.g., `common/process-overview.mdc`, `inception/workspace-detection.mdc`)."""
+
+
+def cursor_orchestrator_rule_content() -> str:
+    """The master orchestrator rule — alwaysApply so Cursor loads it on every
+    interaction and can route to the phase rules via @references."""
+    return """\
+---
+description: "AI-DLC (AI-Driven Development Life Cycle) adaptive software development workflow orchestrator. Governs the three-phase lifecycle (Inception, Construction, Operations) and routes to phase-specific rules."
+alwaysApply: true
+---
+
+# AI-DLC Orchestrator (Cursor Rule)
+
+This rule activates the AI-DLC (AI-Driven Development Life Cycle) adaptive
+workflow. When the user asks to plan, design, build, or implement software,
+follow the three-phase lifecycle defined in the core workflow.
+
+## Workflow Entry Points
+
+1. **New workflow** — no `aidlc-docs/` in the workspace: display the welcome
+   message from `common/welcome-message.mdc` and begin the Inception phase.
+2. **Resume workflow** — `aidlc-docs/aidlc-state.md` exists: follow the session
+   continuity protocol in `common/session-continuity.mdc`.
+
+## Core Workflow
+
+The authoritative workflow definition is in `core-workflow.mdc` (sibling rule
+in this directory). Load it to understand stage sequencing, mandatory rules,
+and the adaptive execution model.
+
+## Phase Rule Files
+
+Load the rule for the current stage on demand (do not load all at once):
+
+- **Inception phase** — rules in `inception/` (workspace-detection.mdc,
+  reverse-engineering.mdc, requirements-analysis.mdc, user-stories.mdc,
+  workflow-planning.mdc, application-design.mdc, units-generation.mdc)
+- **Construction phase** — rules in `construction/` (functional-design.mdc,
+  nfr-requirements.mdc, nfr-design.mdc, infrastructure-design.mdc,
+  code-generation.mdc, build-and-test.mdc)
+- **Operations phase** — rules in `operations/` (operations.mdc — placeholder)
+
+## Cross-Cutting Rules
+
+Reference as needed during any phase:
+
+- `common/terminology.mdc` — glossary
+- `common/depth-levels.mdc` — adaptive detail guidance
+- `common/question-format-guide.mdc` — question formatting
+- `common/content-validation.mdc` — content validation
+- `common/error-handling.mdc` — error recovery
+- `common/overconfidence-prevention.mdc` — confidence calibration
+- `common/ascii-diagram-standards.mdc` — diagram formatting
+- `common/workflow-changes.mdc` — workflow modification handling
+- `common/process-overview.mdc` — high-level workflow diagram
+
+## Extensions (Opt-In)
+
+During Requirements Analysis, present the opt-in prompts from:
+
+- `extensions/security/baseline/security-baseline.opt-in.mdc`
+- `extensions/testing/property-based/property-based-testing.opt-in.mdc`
+
+Load the full extension rules only when the user opts in:
+
+- `extensions/security/baseline/security-baseline.mdc`
+- `extensions/testing/property-based/property-based-testing.mdc`
+
+## Key Principles
+
+- **Follow the core workflow exactly** — see `core-workflow.mdc`
+- **Progressive loading** — load only the rule for the current stage
+- **User control** — wait for explicit approval at stage boundaries
+- **Audit trail** — log user inputs and AI responses in `aidlc-docs/audit.md`
+"""
+
+
+# Short descriptions for Agent-Requested rules (Cursor uses these to decide
+# when to auto-attach the rule based on the user's request).
+CURSOR_RULE_DESCRIPTIONS = {
+    # common/
+    "common/process-overview.md": "AI-DLC workflow overview with three-phase lifecycle diagram",
+    "common/session-continuity.md": "AI-DLC session resumption protocol for returning users",
+    "common/content-validation.md": "AI-DLC content validation rules for generated files",
+    "common/question-format-guide.md": "AI-DLC question formatting rules with multiple-choice structure",
+    "common/welcome-message.md": "AI-DLC user-facing welcome message shown at workflow start",
+    "common/terminology.md": "AI-DLC terminology glossary — phase vs stage definitions",
+    "common/depth-levels.md": "AI-DLC adaptive depth guidance for artifact detail levels",
+    "common/error-handling.md": "AI-DLC error handling and recovery procedures",
+    "common/overconfidence-prevention.md": "AI-DLC confidence calibration rules",
+    "common/ascii-diagram-standards.md": "AI-DLC ASCII diagram formatting standards",
+    "common/workflow-changes.md": "AI-DLC workflow modification handling protocol",
+    # inception/
+    "inception/workspace-detection.md": "AI-DLC workspace detection stage — greenfield vs brownfield, resume vs new",
+    "inception/reverse-engineering.md": "AI-DLC reverse engineering stage for brownfield projects",
+    "inception/requirements-analysis.md": "AI-DLC requirements analysis stage with adaptive depth",
+    "inception/user-stories.md": "AI-DLC user stories and personas generation stage",
+    "inception/workflow-planning.md": "AI-DLC workflow planning stage — phase selection and sequencing",
+    "inception/application-design.md": "AI-DLC application design stage — component and service identification",
+    "inception/units-generation.md": "AI-DLC units generation stage — decomposition into units of work",
+    # construction/
+    "construction/functional-design.md": "AI-DLC functional design stage per unit",
+    "construction/nfr-requirements.md": "AI-DLC NFR requirements stage per unit — tech stack selection",
+    "construction/nfr-design.md": "AI-DLC NFR design stage per unit — non-functional patterns",
+    "construction/infrastructure-design.md": "AI-DLC infrastructure design stage per unit",
+    "construction/code-generation.md": "AI-DLC code generation stage per unit with planning and execution",
+    "construction/build-and-test.md": "AI-DLC build and test stage after all units complete",
+    # operations/
+    "operations/operations.md": "AI-DLC operations phase — placeholder for deployment and monitoring",
+    # extensions/
+    "extensions/security/baseline/security-baseline.md": "AI-DLC security baseline extension — blocking security constraints",
+    "extensions/security/baseline/security-baseline.opt-in.md": "AI-DLC security extension opt-in prompt",
+    "extensions/testing/property-based/property-based-testing.md": "AI-DLC property-based testing extension rules",
+    "extensions/testing/property-based/property-based-testing.opt-in.md": "AI-DLC property-based testing opt-in prompt",
+}
+
+
+def convert_to_mdc(source_path: Path, rel_path: str) -> str:
+    """Wrap a source rule file in Cursor `.mdc` frontmatter.
+
+    Agent Requested rules (description set, globs empty, alwaysApply false) —
+    Cursor's AI decides when to load them based on the description.
+    """
+    body = source_path.read_text()
+    description = CURSOR_RULE_DESCRIPTIONS.get(
+        rel_path, f"AI-DLC rule: {rel_path}"
+    )
+    # Escape double quotes in description for YAML safety
+    description = description.replace('"', '\\"')
+    frontmatter = (
+        "---\n"
+        f'description: "{description}"\n'
+        "alwaysApply: false\n"
+        "---\n\n"
+    )
+    return frontmatter + body
+
+
+def cursor_plugin_readme(version: str) -> str:
+    return f"""\
+# AI-DLC Cursor Rules
+
+AI-Driven Development Life Cycle (AI-DLC) packaged as a Cursor rule set.
+Provides the same adaptive three-phase workflow (Inception, Construction,
+Operations) as the Claude Code plugin, distributed via Cursor's native rule
+system.
+
+**Version**: {version}
+**Source of truth**: `aidlc-rules/` in this repository
+**Generator**: `scripts/build-plugins.py`
+
+> This directory is **generated**. Do not edit files here directly — edit the
+> canonical sources in `aidlc-rules/` and run the generator. CI enforces sync.
+
+## Installing
+
+### For End Users: Remote Rules via GitHub (Recommended)
+
+Cursor can import rules directly from a GitHub repository in one step:
+
+1. Open **Cursor Settings → Rules, Commands**
+2. Under **Project Rules**, click **+ Add Rule → Remote Rule (GitHub)**
+3. Paste: `https://github.com/awslabs/aidlc-workflows`
+4. Cursor syncs the `.mdc` files into
+   `.cursor/rules/imported/aidlc-workflows/`
+
+Cursor scans the whole repo for `.mdc` files and preserves directory
+structure. No zip downloads, no manual file copying.
+
+### For Development: Local Copy
+
+Copy the generated rule tree into a project's `.cursor/rules/`:
+
+```bash
+# From a clone of this repo, at the repo root:
+cp -R plugins/cursor-aidlc/.cursor/rules/aidlc /path/to/target/project/.cursor/rules/
+```
+
+Then open the project in Cursor — it will pick up the rules automatically.
+
+## Using the Rules
+
+Once installed, the `aidlc/aidlc-orchestrator.mdc` rule is set to
+`alwaysApply: true`, so Cursor loads it on every interaction. To start a
+workflow, just describe the work:
+
+> "Help me build a REST API for order management using AI-DLC"
+
+The orchestrator rule routes to the appropriate phase rules on demand via
+Cursor's Agent Requested mechanism. Each phase rule has a description that
+tells Cursor when to auto-attach it.
+
+## How It Works
+
+Cursor has three rule types, inferred from frontmatter:
+
+| Type | Frontmatter | Usage in this bundle |
+|------|-------------|----------------------|
+| Always | `alwaysApply: true` | Only the orchestrator rule |
+| Agent Requested | `description` set | All phase and common rules |
+| Manual | All fields empty | Not used |
+
+This keeps Cursor's context window efficient — only the orchestrator is
+always loaded, and phase-specific rules are pulled in only when relevant.
+
+## Structure
+
+```text
+plugins/cursor-aidlc/
+└── .cursor/
+    └── rules/
+        └── aidlc/
+            ├── aidlc-orchestrator.mdc    # alwaysApply: true
+            ├── core-workflow.mdc          # Adapted master workflow
+            ├── common/                    # Cross-cutting rules
+            ├── inception/                 # Inception phase rules
+            ├── construction/              # Construction phase rules
+            ├── operations/                # Operations phase rules
+            └── extensions/                # Opt-in extensions
+                ├── security/baseline/
+                └── testing/property-based/
+```
+
+## Contributing
+
+Do not edit files in this directory directly. Edit the canonical source in
+`aidlc-rules/` at the repository root, then regenerate:
+
+```bash
+python scripts/build-plugins.py
+```
+
+CI (`plugin-sync` job) runs the generator on every PR and fails if the
+committed output drifts from the source.
+
+## License
+
+Apache-2.0 — see [LICENSE](../../LICENSE).
+"""
+
+
+def build_cursor_plugin(output_dir: Path) -> None:
+    """Generate the Cursor rules plugin directory.
+
+    Output layout:
+        plugins/cursor-aidlc/
+        ├── README.md
+        ├── .markdownlint-cli2.yaml
+        └── .cursor/
+            └── rules/
+                └── aidlc/
+                    ├── aidlc-orchestrator.mdc   (alwaysApply: true)
+                    ├── core-workflow.mdc         (transformed core)
+                    ├── common/*.mdc
+                    ├── inception/*.mdc
+                    ├── construction/*.mdc
+                    ├── operations/*.mdc
+                    └── extensions/
+                        ├── security/baseline/*.mdc
+                        └── testing/property-based/*.mdc
+    """
+    version = read_version()
+    clean_output(output_dir)
+
+    # README
+    (output_dir / "README.md").write_text(cursor_plugin_readme(version))
+
+    # Rule tree root
+    rules_root = output_dir / ".cursor" / "rules" / "aidlc"
+    rules_root.mkdir(parents=True)
+
+    # -- Orchestrator rule (alwaysApply) --
+    (rules_root / "aidlc-orchestrator.mdc").write_text(
+        cursor_orchestrator_rule_content()
+    )
+
+    # -- core-workflow.mdc (transformed for Cursor) --
+    core_src = RULES_ENTRY.read_text()
+    # Apply the Cursor-specific path-resolution transform
+    if PATH_RESOLUTION_OLD not in core_src:
+        print(
+            "ERROR: Could not find the path-resolution block in core-workflow.md.",
+            file=sys.stderr,
         )
-        # Insert before the last line if possible, or just append
-        config_text = config_text.rstrip() + "\n" + plugin_additions
-        (output_dir / ".markdownlint-cli2.yaml").write_text(config_text)
+        sys.exit(1)
+    core_transformed_body = core_src.replace(
+        PATH_RESOLUTION_OLD, CURSOR_PATH_RESOLUTION_NEW, 1
+    )
+    core_description = (
+        "AI-DLC core workflow — three-phase adaptive software development "
+        "lifecycle (Inception, Construction, Operations)"
+    )
+    core_frontmatter = (
+        "---\n"
+        f'description: "{core_description}"\n'
+        "alwaysApply: false\n"
+        "---\n\n"
+    )
+    (rules_root / "core-workflow.mdc").write_text(
+        core_frontmatter + core_transformed_body
+    )
 
-    print(f"Plugin generated at {output_dir} (version {version})")
+    # -- All rule-detail files converted to .mdc --
+    for source_md in sorted(RULE_DETAILS.rglob("*.md")):
+        rel = source_md.relative_to(RULE_DETAILS)
+        rel_str = str(rel)
+        mdc_path = rules_root / rel.with_suffix(".mdc")
+        mdc_path.parent.mkdir(parents=True, exist_ok=True)
+        mdc_path.write_text(convert_to_mdc(source_md, rel_str))
+
+    write_plugin_markdownlint_config(output_dir)
+
+    print(f"Cursor plugin generated at {output_dir} (version {version})")
 
 
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate the Claude Code AIDLC plugin from canonical rules"
+        description="Generate AIDLC plugins for supported AI coding agents"
     )
     parser.add_argument(
-        "--output-dir",
+        "--target",
+        choices=["all", "cc", "cursor"],
+        default="all",
+        help="Which plugin(s) to build (default: all)",
+    )
+    parser.add_argument(
+        "--cc-output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT,
-        help=f"Output directory (default: {DEFAULT_OUTPUT.relative_to(REPO_ROOT)})",
+        default=CC_DEFAULT_OUTPUT,
+        help=f"Claude Code plugin output directory "
+        f"(default: {CC_DEFAULT_OUTPUT.relative_to(REPO_ROOT)})",
+    )
+    parser.add_argument(
+        "--cursor-output-dir",
+        type=Path,
+        default=CURSOR_DEFAULT_OUTPUT,
+        help=f"Cursor plugin output directory "
+        f"(default: {CURSOR_DEFAULT_OUTPUT.relative_to(REPO_ROOT)})",
     )
     args = parser.parse_args()
-    build_plugin(args.output_dir)
+
+    if args.target in ("all", "cc"):
+        build_cc_plugin(args.cc_output_dir)
+    if args.target in ("all", "cursor"):
+        build_cursor_plugin(args.cursor_output_dir)
 
 
 if __name__ == "__main__":

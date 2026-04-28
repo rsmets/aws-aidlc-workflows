@@ -162,9 +162,24 @@ To verify the rules are loaded:
 
 AI-DLC uses [Cursor Rules](https://cursor.com/docs/context/rules) to implement its intelligent workflow.
 
-The commands below assume you extracted the zip to your `Downloads` folder. If you used a different location, replace `Downloads` with your actual folder path.
+#### Option 1: Remote Rules via GitHub (Recommended)
 
-#### Option 1: Project Rules (Recommended)
+Cursor can import rules directly from this repository in a single step — no downloads, no manual copying:
+
+1. Open **Cursor Settings → Rules, Commands**
+2. Under **Project Rules**, click **+ Add Rule → Remote Rule (GitHub)**
+3. Paste: `https://github.com/awslabs/aidlc-workflows`
+4. Cursor syncs the `.mdc` files into `.cursor/rules/imported/aidlc-workflows/`
+
+The rules live under `plugins/cursor-aidlc/.cursor/rules/aidlc/` in this repo. Cursor scans the whole repository for `.mdc` files and preserves directory structure on import.
+
+Once imported, the `aidlc-orchestrator` rule is set to `alwaysApply: true`, so Cursor loads it on every interaction. Just describe your task (e.g., "Help me build a REST API using AI-DLC") and the orchestrator routes to the appropriate phase rules automatically.
+
+> **Note:** If you previously set up AI-DLC manually (Option 2 below), remove the manual setup to avoid duplicate context: delete the manual `.cursor/rules/ai-dlc-workflow.mdc` and the `.aidlc-rule-details/` directory from your project.
+
+#### Option 2: Project Rules (Manual)
+
+The commands below assume you extracted the zip to your `Downloads` folder. If you used a different location, replace `Downloads` with your actual folder path.
 
 **Unix/Linux/macOS:**
 
@@ -223,7 +238,7 @@ mkdir .aidlc-rule-details
 xcopy "%USERPROFILE%\Downloads\aidlc-rules\aws-aidlc-rule-details" ".aidlc-rule-details\" /E /I
 ```
 
-#### Option 2: AGENTS.md (Simple Alternative)
+#### Option 3: AGENTS.md (Simple Alternative)
 
 **Unix/Linux/macOS:**
 
@@ -257,7 +272,7 @@ xcopy "%USERPROFILE%\Downloads\aidlc-rules\aws-aidlc-rule-details" ".aidlc-rule-
 
 ![AI-DLC Rules in Cursor](./assets/images/cursor-ide-aidlc-rules-loaded.png?raw=true "AI-DLC Rules in Cursor")
 
-**Directory Structure (Option 1):**
+**Directory Structure (Option 2):**
 
 ```text
 <my-project>/

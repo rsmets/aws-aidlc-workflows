@@ -35,11 +35,11 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.x'
-      - name: Regenerate Claude Code plugin
-        run: python scripts/build-cc-plugin.py
+      - name: Regenerate plugins (Claude Code + Cursor)
+        run: python scripts/build-plugins.py
       - name: Check for drift
         run: |
           if ! git diff --exit-code plugins/; then
-            echo "::error::Plugin output is out of sync with aidlc-rules/. Run 'python scripts/build-cc-plugin.py' and commit the result."
+            echo "::error::Plugin output is out of sync with aidlc-rules/. Run 'python scripts/build-plugins.py' and commit the result."
             exit 1
           fi

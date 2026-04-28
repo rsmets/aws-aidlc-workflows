@@ -1,0 +1,68 @@
+---
+description: "AI-DLC (AI-Driven Development Life Cycle) adaptive software development workflow orchestrator. Governs the three-phase lifecycle (Inception, Construction, Operations) and routes to phase-specific rules."
+alwaysApply: true
+---
+
+# AI-DLC Orchestrator (Cursor Rule)
+
+This rule activates the AI-DLC (AI-Driven Development Life Cycle) adaptive
+workflow. When the user asks to plan, design, build, or implement software,
+follow the three-phase lifecycle defined in the core workflow.
+
+## Workflow Entry Points
+
+1. **New workflow** — no `aidlc-docs/` in the workspace: display the welcome
+   message from `common/welcome-message.mdc` and begin the Inception phase.
+2. **Resume workflow** — `aidlc-docs/aidlc-state.md` exists: follow the session
+   continuity protocol in `common/session-continuity.mdc`.
+
+## Core Workflow
+
+The authoritative workflow definition is in `core-workflow.mdc` (sibling rule
+in this directory). Load it to understand stage sequencing, mandatory rules,
+and the adaptive execution model.
+
+## Phase Rule Files
+
+Load the rule for the current stage on demand (do not load all at once):
+
+- **Inception phase** — rules in `inception/` (workspace-detection.mdc,
+  reverse-engineering.mdc, requirements-analysis.mdc, user-stories.mdc,
+  workflow-planning.mdc, application-design.mdc, units-generation.mdc)
+- **Construction phase** — rules in `construction/` (functional-design.mdc,
+  nfr-requirements.mdc, nfr-design.mdc, infrastructure-design.mdc,
+  code-generation.mdc, build-and-test.mdc)
+- **Operations phase** — rules in `operations/` (operations.mdc — placeholder)
+
+## Cross-Cutting Rules
+
+Reference as needed during any phase:
+
+- `common/terminology.mdc` — glossary
+- `common/depth-levels.mdc` — adaptive detail guidance
+- `common/question-format-guide.mdc` — question formatting
+- `common/content-validation.mdc` — content validation
+- `common/error-handling.mdc` — error recovery
+- `common/overconfidence-prevention.mdc` — confidence calibration
+- `common/ascii-diagram-standards.mdc` — diagram formatting
+- `common/workflow-changes.mdc` — workflow modification handling
+- `common/process-overview.mdc` — high-level workflow diagram
+
+## Extensions (Opt-In)
+
+During Requirements Analysis, present the opt-in prompts from:
+
+- `extensions/security/baseline/security-baseline.opt-in.mdc`
+- `extensions/testing/property-based/property-based-testing.opt-in.mdc`
+
+Load the full extension rules only when the user opts in:
+
+- `extensions/security/baseline/security-baseline.mdc`
+- `extensions/testing/property-based/property-based-testing.mdc`
+
+## Key Principles
+
+- **Follow the core workflow exactly** — see `core-workflow.mdc`
+- **Progressive loading** — load only the rule for the current stage
+- **User control** — wait for explicit approval at stage boundaries
+- **Audit trail** — log user inputs and AI responses in `aidlc-docs/audit.md`

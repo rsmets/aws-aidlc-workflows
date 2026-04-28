@@ -32,17 +32,28 @@ aidlc-rules/
     └── operations/
 ```
 
-### Claude Code Plugin — Generated Content
+### Generated Plugins — Do Not Edit Directly
 
-The `plugins/claude-code-aidlc/` directory is **generated** by `scripts/build-cc-plugin.py` from the canonical `aidlc-rules/` source. Do not edit files in `plugins/` directly — your changes will be overwritten and CI will reject the PR.
+The `plugins/` directory contains generated plugin packages for Claude Code
+(`plugins/claude-code-aidlc/`) and Cursor (`plugins/cursor-aidlc/`). Both are
+produced by `scripts/build-plugins.py` from the canonical `aidlc-rules/`
+source. Do not edit files in `plugins/` directly — your changes will be
+overwritten and CI will reject the PR.
 
 To update plugin content:
 
 1. Edit the source files in `aidlc-rules/`
-2. Run `python scripts/build-cc-plugin.py` to regenerate the plugin
+2. Run `python scripts/build-plugins.py` to regenerate both plugins
 3. Commit both the source changes and the regenerated plugin output
 
-CI runs the generator and checks `git diff --exit-code plugins/` — if the committed plugin doesn't match the regenerated output, the PR fails.
+To build only one target during development:
+
+```bash
+python scripts/build-plugins.py --target cc       # Claude Code only
+python scripts/build-plugins.py --target cursor   # Cursor only
+```
+
+CI runs the generator and checks `git diff --exit-code plugins/` — if the committed output doesn't match the regenerated result, the PR fails.
 
 ### Rule Structure
 
