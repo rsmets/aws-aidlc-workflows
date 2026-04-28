@@ -361,11 +361,23 @@ xcopy "%USERPROFILE%\Downloads\aidlc-rules\aws-aidlc-rule-details" ".aidlc-rule-
 
 ### Claude Code
 
-AI-DLC uses Claude Code's project memory file (`CLAUDE.md`) to implement its intelligent workflow.
+#### Option 1: Plugin Install (Recommended)
+
+Install AI-DLC as a Claude Code plugin — no file copying, no `CLAUDE.md` overwrite, and versioned updates:
+
+```bash
+claude plugin install --from https://github.com/awslabs/aidlc-workflows/tree/main/plugins/claude-code-aidlc
+```
+
+Once installed, use `/aidlc` to start a new workflow or resume an existing one. Phase-specific commands are also available: `/aidlc:inception`, `/aidlc:construction`, `/aidlc:operations`.
+
+> **Note:** If you previously set up AI-DLC manually (copied `core-workflow.md` to `CLAUDE.md`), remove the manual setup to avoid duplicate context. Delete `CLAUDE.md` (if it only contains AIDLC content) and the `.aidlc-rule-details/` directory from your project.
+
+#### Option 2: Project Root (Manual)
+
+AI-DLC can also be set up manually using Claude Code's project memory file (`CLAUDE.md`).
 
 The commands below assume you extracted the zip to your `Downloads` folder. If you used a different location, replace `Downloads` with your actual folder path.
-
-#### Option 1: Project Root (Recommended)
 
 **Unix/Linux/macOS:**
 
@@ -391,7 +403,7 @@ mkdir .aidlc-rule-details
 xcopy "%USERPROFILE%\Downloads\aidlc-rules\aws-aidlc-rule-details" ".aidlc-rule-details\" /E /I
 ```
 
-#### Option 2: .claude Directory
+#### Option 3: .claude Directory (Manual)
 
 **Unix/Linux/macOS:**
 

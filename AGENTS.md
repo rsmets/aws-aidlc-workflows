@@ -21,6 +21,8 @@ aidlc-rules/
     ├── construction/             # Design and implementation rules
     ├── extensions/               # Optional cross-cutting constraint rules
     └── operations/               # Deployment and monitoring rules
+plugins/claude-code-aidlc/        # Claude Code plugin (GENERATED — do not edit directly)
+scripts/build-cc-plugin.py        # Generator: aidlc-rules/ → plugins/claude-code-aidlc/
 scripts/aidlc-evaluator/          # Python evaluation framework (uv-managed)
 docs/
 ├── ADMINISTRATIVE_GUIDE.md       # CI/CD, workflows, secrets, release process

@@ -32,6 +32,18 @@ aidlc-rules/
     └── operations/
 ```
 
+### Claude Code Plugin — Generated Content
+
+The `plugins/claude-code-aidlc/` directory is **generated** by `scripts/build-cc-plugin.py` from the canonical `aidlc-rules/` source. Do not edit files in `plugins/` directly — your changes will be overwritten and CI will reject the PR.
+
+To update plugin content:
+
+1. Edit the source files in `aidlc-rules/`
+2. Run `python scripts/build-cc-plugin.py` to regenerate the plugin
+3. Commit both the source changes and the regenerated plugin output
+
+CI runs the generator and checks `git diff --exit-code plugins/` — if the committed plugin doesn't match the regenerated output, the PR fails.
+
 ### Rule Structure
 
 Rules are organized by phase:
