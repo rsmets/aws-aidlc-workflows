@@ -11,6 +11,10 @@ documentation:
     - '**/*.md'
     - '!aidlc-rules/**'
 
+plugin:
+- changed-files:
+  - any-glob-to-any-file: 'plugins/**'
+
 github:
 - changed-files:
   - any-glob-to-any-file: '.github/**'

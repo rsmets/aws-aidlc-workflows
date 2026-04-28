@@ -1,0 +1,7 @@
+{
+  "name": "aidlc",
+  "version": "0.1.8",
+  "description": "AI-Driven Development Life Cycle \u2014 structured adaptive workflow for software development with AI coding agents",
+  "repository": "https://github.com/awslabs/aidlc-workflows",
+  "license": "Apache-2.0"
+}

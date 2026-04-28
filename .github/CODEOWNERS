@@ -14,6 +14,7 @@ CODE_OF_CONDUCT.md                     @awslabs/aidlc-admins
 CONTRIBUTING.md                        @awslabs/aidlc-admins
 LICENSE                                @awslabs/aidlc-admins
 README.md                              @awslabs/aidlc-admins
+plugins/                               @awslabs/aidlc-admins @awslabs/aidlc-maintainers
 scripts/                               @awslabs/aidlc-admins @awslabs/aidlc-maintainers
 
 ## Secure the CODEOWNERS file
