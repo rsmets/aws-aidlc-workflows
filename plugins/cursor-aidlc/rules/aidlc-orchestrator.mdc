@@ -7,14 +7,50 @@ alwaysApply: true
 
 This rule activates the AI-DLC (AI-Driven Development Life Cycle) adaptive
 workflow. When the user asks to plan, design, build, or implement software,
-follow the three-phase lifecycle defined in the core workflow.
+you MUST enforce the three-phase lifecycle defined in the core workflow
+verbatim. Skipping, compressing, or improvising around any MANDATORY item
+in `core-workflow.mdc` is a bug in your behavior, NOT a permissible
+shortcut — even when the task seems simple.
+
+The workflow is adaptive in DEPTH (minimal / standard / comprehensive),
+NOT in mandatory steps.
+
+## FIRST-TURN HARD GATE — Do These Before ANY Substantive Response
+
+On the first turn of any new AI-DLC request, complete every step below
+BEFORE producing a plan, code, recommendation, or other substantive output.
+Announce each step as you complete it.
+
+1. **Audit log bootstrap** — Create `aidlc-docs/audit.md` if absent. Append
+   the user's COMPLETE RAW INPUT with ISO-8601 UTC timestamp using the
+   format in `core-workflow.mdc` under "Audit Log Format". NEVER overwrite
+   `audit.md`; always append.
+2. **Load the core workflow** — Read `core-workflow.mdc` (sibling rule).
+3. **Load common rules** — Read `common/process-overview.mdc`,
+   `common/session-continuity.mdc`, `common/content-validation.mdc`, and
+   `common/question-format-guide.mdc`.
+4. **Display the welcome message** — Read `common/welcome-message.mdc` and
+   display it verbatim. First turn ONLY.
+5. **Scan extensions (opt-in files only)** — Read
+   `extensions/security/baseline/security-baseline.opt-in.mdc` and
+   `extensions/testing/property-based/property-based-testing.opt-in.mdc`.
+   Do NOT load full extension rules yet.
+6. **Check for existing session state** — Read `aidlc-docs/aidlc-state.md`
+   if it exists; resume per `common/session-continuity.mdc`. Otherwise
+   initialize during Workspace Detection.
+7. **Execute Workspace Detection** (ALWAYS EXECUTE) — per
+   `inception/workspace-detection.mdc`. Log findings to `audit.md` and
+   create/update `aidlc-state.md`.
+
+**Hard stop**: If any first-turn step fails, STOP, report the failure, and
+do not proceed. Do not substitute or skip steps.
 
 ## Workflow Entry Points
 
-1. **New workflow** — no `aidlc-docs/` in the workspace: display the welcome
-   message from `common/welcome-message.mdc` and begin the Inception phase.
-2. **Resume workflow** — `aidlc-docs/aidlc-state.md` exists: follow the session
-   continuity protocol in `common/session-continuity.mdc`.
+1. **New workflow** — no `aidlc-docs/` in the workspace: complete the
+   first-turn hard gate above, then begin the Inception phase.
+2. **Resume workflow** — `aidlc-docs/aidlc-state.md` exists: follow the
+   session continuity protocol in `common/session-continuity.mdc`.
 
 ## Core Workflow
 
@@ -33,6 +69,31 @@ Load the rule for the current stage on demand (do not load all at once):
   nfr-requirements.mdc, nfr-design.mdc, infrastructure-design.mdc,
   code-generation.mdc, build-and-test.mdc)
 - **Operations phase** — rules in `operations/` (operations.mdc — placeholder)
+
+## Per-Stage Approval Gate (No Shortcuts)
+
+Every stage marked with "Wait for Explicit Approval" in `core-workflow.mdc`
+requires its OWN completion message and its OWN approval. Rolling multiple
+stages under one approval is a violation. Approving an Inception plan does
+NOT authorize Construction or Operations.
+
+- Use the standardized 2-option completion message defined in the stage's
+  rule file. Do NOT invent 3-option menus.
+- Log the approval prompt in `audit.md` BEFORE asking; log the user's
+  response AFTER receiving.
+
+## Question Format Gate (No Freeform Chat Questions)
+
+All clarifying questions MUST be written to a file under `aidlc-docs/` per
+`common/question-format-guide.mdc`:
+
+- File naming: `{phase-name}-questions.md`.
+- Multiple-choice A/B/C/... with "Other (please describe after [Answer]:
+  tag below)" as the MANDATORY last option.
+- `[Answer]:` tag beneath each question.
+- Inform the user, wait for them to say "done", then read answers.
+
+Asking clarifying questions inline in chat is a violation.
 
 ## Cross-Cutting Rules
 
@@ -59,6 +120,40 @@ Load the full extension rules only when the user opts in:
 
 - `extensions/security/baseline/security-baseline.mdc`
 - `extensions/testing/property-based/property-based-testing.mdc`
+
+## Audit Trail Requirements
+
+- Log EVERY user input with ISO-8601 UTC timestamp in `aidlc-docs/audit.md`.
+- Capture COMPLETE RAW INPUT — never summarize or paraphrase.
+- Log every approval prompt BEFORE asking, and every user response AFTER
+  receiving.
+- Append only. NEVER overwrite `audit.md`.
+
+## Self-Audit Before Claiming Phase Completion
+
+Before any phase-completion message, verify:
+
+1. `aidlc-docs/audit.md` has timestamped entries for every user input.
+2. `aidlc-docs/aidlc-state.md` reflects the current phase and stage.
+3. Every MANDATORY stage produced the artifacts its rule file requires.
+4. Each gated stage has its own logged approval.
+5. Clarifying questions were captured in question files, not chat.
+
+If any self-audit item fails, report the gap and remediate BEFORE
+claiming completion.
+
+## What Counts as a Violation
+
+- Displaying a plan before creating `aidlc-docs/audit.md`.
+- Starting substantive work without displaying the welcome message on
+  turn one.
+- Skipping Workspace Detection.
+- Asking clarifying questions in chat.
+- One approval gate covering multiple stages/phases.
+- Emergent 3-option completion menus.
+- Overwriting `audit.md`.
+- Treating "the task is small" as justification for skipping MANDATORY
+  steps.
 
 ## Key Principles
 

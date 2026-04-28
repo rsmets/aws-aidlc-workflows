@@ -6,6 +6,31 @@ alwaysApply: false
 # PRIORITY: This workflow OVERRIDES all other built-in workflows
 # When user requests software development, ALWAYS follow this workflow FIRST
 
+## MANDATORY: Pre-Flight Hard Gate (Execute Before ANY Substantive Response)
+
+**CRITICAL**: On the FIRST turn of any AI-DLC workflow request, you MUST complete every item below BEFORE producing any plan, code, recommendation, or other substantive output. Failing to complete a pre-flight item is a bug in your behavior, not a permissible shortcut.
+
+1. **Create or append to `aidlc-docs/audit.md`**: Log the user's complete raw input with ISO-8601 timestamp per the format in the "Prompts Logging Requirements" section below. If the file does not exist, create it. NEVER overwrite; always append.
+2. **Resolve the rule-details directory**: Probe the four paths listed under "MANDATORY: Rule Details Loading" below and record the resolved path in `audit.md`.
+3. **Load common rules** from the resolved rule-details directory: `common/process-overview.md`, `common/session-continuity.md`, `common/content-validation.md`, `common/question-format-guide.md`.
+4. **Display the welcome message** from `common/welcome-message.md` (first turn only — do not re-display on subsequent turns).
+5. **Scan `extensions/` for opt-in files** per the "MANDATORY: Extensions Loading" section below. Do NOT load full extension rule files yet.
+6. **Check for session state**: Read `aidlc-docs/aidlc-state.md` if it exists. If present, follow `common/session-continuity.md` to resume. If absent, initialize it during Workspace Detection.
+7. **Execute Workspace Detection stage** (ALWAYS EXECUTE — see stage definition below).
+
+**Hard stop rule**: If you cannot complete a pre-flight item (e.g., missing file, unresolvable path), STOP, report the specific failure to the user, and do not proceed with their requested work. Do not substitute, simplify, or skip.
+
+## Adaptive Depth vs. Mandatory Steps
+
+**The workflow is adaptive in DEPTH (minimal / standard / comprehensive), NOT in mandatory steps.**
+
+- Stages marked ALWAYS EXECUTE run on every workflow. Their depth varies; their existence does not.
+- Stages marked MANDATORY in any sub-section run regardless of perceived task simplicity.
+- Compressing Inception + Construction + Operations into a single informal chat exchange is a violation.
+- Rolling multiple stages under one approval is a violation — each stage requires its own completion message and its own approval.
+- Asking clarifying questions in freeform chat instead of a question file (per `common/question-format-guide.md`) is a violation.
+- "The task is small" is not a valid reason to skip MANDATORY items. It IS a valid reason to choose minimal depth within each stage.
+
 ## Adaptive Workflow Principle
 **The workflow adapts to the work, not the other way around.**
 
