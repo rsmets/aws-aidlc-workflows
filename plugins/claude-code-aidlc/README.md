@@ -7,7 +7,7 @@ commands, and progressive-disclosure skills.
 
 **Version**: 0.1.8
 **Source of truth**: `aidlc-rules/` in this repository
-**Generator**: `scripts/build-cc-plugin.py`
+**Generator**: `scripts/build-plugins.py`
 
 > This directory is **generated**. Do not edit files here directly — edit the
 > canonical sources in `aidlc-rules/` and run the generator. CI enforces sync.
@@ -119,7 +119,7 @@ Do not edit files in this directory directly. Edit the canonical source in
 `aidlc-rules/` at the repository root, then regenerate:
 
 ```bash
-python scripts/build-cc-plugin.py
+python scripts/build-plugins.py
 ```
 
 CI (`plugin-sync` job) runs the generator on every PR and fails if the

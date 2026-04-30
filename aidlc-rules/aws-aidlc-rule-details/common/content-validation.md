@@ -38,7 +38,7 @@
 ```
 
 ### Implementation Pattern
-```markdown
+````markdown
 ## Workflow Visualization
 
 ### Mermaid Diagram (if syntax valid)
@@ -53,6 +53,7 @@ Phase 1: INCEPTION
 - Stage 2: Requirements Analysis (COMPLETED)
 [continue with text representation]
 ```
+````
 
 ## General Content Validation
 

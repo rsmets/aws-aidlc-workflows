@@ -45,7 +45,7 @@ This works but is less clean than Option 1.
 
 ## Using the Rules
 
-Once installed, the `aidlc/aidlc-orchestrator.mdc` rule is set to
+Once installed, the `.cursor/rules/aidlc-orchestrator.mdc` rule is set to
 `alwaysApply: true`, so Cursor loads it on every interaction. To start a
 workflow, just describe the work:
 

@@ -170,7 +170,7 @@ Examples (these are internal sub-steps within a single stage, not separate stage
 
 ### Plans
 Documents with checkboxes and questions that guide execution.
-- Located in `aidlc-docs/plans/`
+- Located in phase-specific plan directories such as `aidlc-docs/inception/plans/` and `aidlc-docs/construction/plans/`
 - Examples: `story-generation-plan.md`, `unit-of-work-plan.md`
 
 ### Artifacts

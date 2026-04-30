@@ -80,7 +80,7 @@ commands, and progressive-disclosure skills.
 
 **Version**: {version}
 **Source of truth**: `aidlc-rules/` in this repository
-**Generator**: `scripts/build-cc-plugin.py`
+**Generator**: `scripts/build-plugins.py`
 
 > This directory is **generated**. Do not edit files here directly — edit the
 > canonical sources in `aidlc-rules/` and run the generator. CI enforces sync.
@@ -192,7 +192,7 @@ Do not edit files in this directory directly. Edit the canonical source in
 `aidlc-rules/` at the repository root, then regenerate:
 
 ```bash
-python scripts/build-cc-plugin.py
+python scripts/build-plugins.py
 ```
 
 CI (`plugin-sync` job) runs the generator on every PR and fails if the
@@ -1242,7 +1242,7 @@ This works but is less clean than Option 1.
 
 ## Using the Rules
 
-Once installed, the `aidlc/aidlc-orchestrator.mdc` rule is set to
+Once installed, the `.cursor/rules/aidlc-orchestrator.mdc` rule is set to
 `alwaysApply: true`, so Cursor loads it on every interaction. To start a
 workflow, just describe the work:
 
